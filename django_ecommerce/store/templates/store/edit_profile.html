@@ -1,0 +1,50 @@
+{% extends 'store/main.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center">Edit Profile</h2>
+
+    <div class="card p-4 shadow-lg">
+        <form method="POST" enctype="multipart/form-data">  <!-- Important: Add enctype -->
+            {% csrf_token %}
+
+            <div class="text-center mb-3">
+                <img src="{{ profile.image.url }}" class="img-fluid rounded-circle" width="150" alt="Profile Picture">
+                <br>
+                <input type="file" class="form-control mt-2" name="profile_picture">
+            </div>
+
+            
+            <div class="mb-3">
+                <label for="Name" class="form-label"><strong>Name</strong></label>
+                <input type="text" class="form-control" id="Name" name="name" value="{{ user.first_name }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="username" class="form-label"><strong>Username</strong></label>
+                <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label"><strong>Email</strong></label>
+                <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+            </div>
+            <hr>
+            <h5>Change Password</h5>
+            <div class="mb-3">
+                <label for="current_password" class="form-label"><strong>Current Password</strong></label>
+                <input type="password" class="form-control" id="current_password" name="current_password">
+            </div>
+            <div class="mb-3">
+                <label for="new_password" class="form-label"><strong>New Password</strong></label>
+                <input type="password" class="form-control" id="new_password" name="new_password">
+            </div>
+            <div class="mb-3">
+                <label for="confirm_password" class="form-label"><strong>Confirm New Password</strong></label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

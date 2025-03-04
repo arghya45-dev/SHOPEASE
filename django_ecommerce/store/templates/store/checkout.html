@@ -1,0 +1,228 @@
+{% extends 'store/main.html' %}
+{% load static %}
+{% block content %}
+     <div class="row">
+		<div class="col-lg-6">
+			<div class="box-element" id="form-wrapper">
+				<form id="form">
+					<div id="user-info">
+						<div class="form-field">
+							<input required class="form-control" type="text" name="name" placeholder="Name..">
+						</div>
+						<div class="form-field">
+							<input required class="form-control" type="email" name="email" placeholder="Email..">
+						</div>
+					</div>
+					
+					<div id="shipping-info">
+						<hr>
+						<p>Shipping Information:</p>
+						<hr>
+						<div class="form-field">
+							<input class="form-control" type="text" name="address" placeholder="Address..">
+						</div>
+						<div class="form-field">
+							<input class="form-control" type="text" name="city" placeholder="City..">
+						</div>
+						<div class="form-field">
+							<input class="form-control" type="text" name="state" placeholder="State..">
+						</div>
+						<div class="form-field">
+							<input class="form-control" type="text" name="zipcode" placeholder="Zip code..">
+						</div>
+						<div class="form-field">
+							<input class="form-control" type="text" name="country" placeholder="Country..">
+						</div>
+					</div>
+
+					<hr>
+					<input id="form-button" class="btn btn-success btn-block" type="submit" value="Continue">
+					<button id="cod-button" class="btn btn-warning btn-block mt-2">Cash on Delivery</button>
+				</form>
+			</div>
+
+			<br>
+			<div class="box-element hidden" id="payment-info">
+				<small>Paypal Options</small>
+				<div id="paypal-button-container"></div>
+			</div>
+		</div>
+
+		<div class="col-lg-6">
+			<div class="box-element">
+				<a class="btn btn-outline-dark" href="{% url 'cart' %}">&#x2190; Back to Cart</a>
+				<hr>
+				<h3>Order Summary</h3>
+				<hr>
+				{% for item in items %}
+				<div class="cart-row">
+					<div style="flex:2"><img class="row-image" src="{{item.product.imageURL}}"></div>
+					<div style="flex:2"><p>{{item.product.name}}</p></div>
+					<div style="flex:1"><p>${{item.product.price|floatformat:2}}</p></div>
+					<div style="flex:1"><p>x{{item.quantity}}</p></div>
+				</div>
+				{% endfor %}
+				<h5>Items: {{order.get_cart_items}}</h5>
+				<h5>Total: ${{order.get_cart_total|floatformat:2}}</h5>
+			</div>
+		</div>
+	</div>
+
+	<!-- PayPal SDK -->
+	<script src="https://www.paypal.com/sdk/js?client-id=YOUR-CLIENT-ID&currency=USD&disable-funding=credit"></script>
+
+	<script>
+		// Function to get CSRF token from cookies
+		function getCookie(name) {
+			let cookieValue = null;
+			if (document.cookie && document.cookie !== '') {
+				const cookies = document.cookie.split(';');
+				for (let i = 0; i < cookies.length; i++) {
+					const cookie = cookies[i].trim();
+					if (cookie.startsWith(name + '=')) {
+						cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+						break;
+					}
+				}
+			}
+			return cookieValue;
+		}
+
+		const csrftoken = getCookie('csrftoken');
+		var total = '{{ order.get_cart_total }}';
+
+		// PayPal Integration
+		paypal.Buttons({
+			style: { color: 'blue', shape: 'rect' },
+			createOrder: function(data, actions) {
+				return actions.order.create({
+					purchase_units: [{
+						amount: { value: parseFloat(total).toFixed(2) }
+					}]
+				});
+			},
+			onApprove: function(data, actions) {
+				return actions.order.capture().then(function(details) {
+					submitFormData();
+				});
+			}
+		}).render('#paypal-button-container');
+
+		// Handle Form Submission
+		document.getElementById('form').addEventListener('submit', function(e) {
+			e.preventDefault();
+			document.getElementById('form-button').classList.add("hidden");
+			document.getElementById('payment-info').classList.remove("hidden");
+		});
+
+		// Function to submit order data
+		function submitFormData(paymentMethod = 'PayPal') {
+			let userFormData = {
+				'name': null,
+				'email': null,
+				'total': total,
+				'payment_method': paymentMethod
+			};
+
+			let shippingInfo = {
+				'address': null,
+				'city': null,
+				'state': null,
+				'zipcode': null
+			};
+
+			if ('{{ order.shipping }}' !== 'False') {
+				shippingInfo.address = document.querySelector('[name="address"]').value;
+				shippingInfo.city = document.querySelector('[name="city"]').value;
+				shippingInfo.state = document.querySelector('[name="state"]').value;
+				shippingInfo.zipcode = document.querySelector('[name="zipcode"]').value;
+			}
+
+			if (user == 'AnonymousUser') {
+				userFormData.name = document.querySelector('[name="name"]').value;
+				userFormData.email = document.querySelector('[name="email"]').value;
+			}
+
+			fetch('/process_order/', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRFToken': csrftoken
+				},
+				body: JSON.stringify({ 'form': userFormData, 'shipping': shippingInfo })
+			})
+			.then(response => response.json())
+			.then(data => {
+				alert('Your order has been placed successfully!');
+				document.cookie = 'cart=' + JSON.stringify({}) + ";domain=;path=/";
+				window.location.href = "{% url 'store' %}";
+			})
+			.catch(error => {
+				console.error('Error:', error);
+				alert("There was an issue processing your order. Please try again.");
+			});
+		}
+
+	</script>
+
+	<script>
+		document.getElementById('cod-button').addEventListener('click', function(e) {
+			e.preventDefault();
+	
+			// Show a confirmation popup
+			let confirmCOD = confirm("Are you sure you want to place an order with Cash on Delivery?");
+			if (!confirmCOD) {
+				return;
+			}
+	
+			// Gather user and shipping details
+			var userFormData = {
+				'name': null,
+				'email': null,
+				'total': '{{order.get_cart_total}}',
+				'payment_method': 'COD'
+			};
+	
+			var shippingInfo = {
+				'address': null,
+				'city': null,
+				'state': null,
+				'zipcode': null
+			};
+	
+			if ('{{ order.shipping }}' !== 'False') {
+				shippingInfo.address = document.getElementsByName('address')[0].value;
+				shippingInfo.city = document.getElementsByName('city')[0].value;
+				shippingInfo.state = document.getElementsByName('state')[0].value;
+				shippingInfo.zipcode = document.getElementsByName('zipcode')[0].value;
+			}
+	
+			if (user == 'AnonymousUser') {
+				userFormData.name = document.getElementsByName('name')[0].value;
+				userFormData.email = document.getElementsByName('email')[0].value;
+			}
+	
+			// Send order data to the server
+			fetch('/process_order/', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRFToken': csrftoken
+				},
+				body: JSON.stringify({'form': userFormData, 'shipping': shippingInfo})
+			})
+			.then(response => response.json())
+			.then(data => {
+				console.log('Order Success:', data);
+				alert('Your Cash on Delivery order has been placed successfully!');
+				
+				// Clear cart and redirect
+				document.cookie = 'cart=' + JSON.stringify({}) + ";domain=;path=/";
+				window.location.href = "{% url 'store' %}";
+			})
+			.catch(error => console.error('Error:', error));
+		});
+	</script>
+	
+
+{% endblock content %}

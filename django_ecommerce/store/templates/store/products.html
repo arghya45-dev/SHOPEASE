@@ -1,0 +1,99 @@
+{% extends 'store/main.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Our Products</h2>
+
+    <div class="row">
+        {% for product in products %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-lg" style="height: 100%; display: flex; flex-direction: column;">
+                <img src="{{ product.image.url }}" class="card-img-top product-img" alt="{{ product.name }}">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text text-muted">{{ product.description|truncatewords:15 }}</p>
+                    <h6 class="text-success">$ {{ product.price }}</h6>
+                    <button class="btn btn-primary mt-auto add-to-cart" data-product="{{ product.id }}">Add to Cart</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .product-img {
+        height: 250px;
+        object-fit: cover;
+    }
+    .card {
+        height: 100%;
+    }
+    .card-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let addToCartBtns = document.querySelectorAll(".add-to-cart");
+
+        addToCartBtns.forEach((btn) => {
+            btn.addEventListener("click", function() {
+                let productId = this.dataset.product;
+                let action = "add";
+                if (user === "AnonymousUser") {
+                    alert("You must be logged in to add items to the cart!");
+                } else {
+                    updateCart(productId, action);
+                }
+                console.log("Product ID:", productId, "Action:", action);
+                
+            });
+        });
+
+        function updateCart(productId, action) {
+            let url = "/update_item/";
+            let csrftoken = getCookie("csrftoken");
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrftoken,
+                },
+                body: JSON.stringify({ productId: productId, action: action }),
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                console.log("Success:", data);
+                alert("Product added to cart!");  // Optional success alert
+                location.reload(); // Refresh page to update cart count
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + "=")) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+
+
+{% endblock %}

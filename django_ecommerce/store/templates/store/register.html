@@ -1,0 +1,120 @@
+{% extends 'store/main.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+/* Background styling with enhanced gradient and smooth transition */
+body {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    background-attachment: fixed;
+    {% comment %} display: flex; {% endcomment %}
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+/* Enhanced Glassmorphism effect */
+.card, .register-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+    transition: transform 0.3s ease-in-out;
+    padding: 20px;
+    max-width: 400px;
+    width: 100%;
+}
+.card:hover, .register-card:hover {
+    transform: scale(1.02);
+}
+
+/* Input fields with floating effect */
+input {
+    width: 100%;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 10px;
+    padding: 10px;
+    transition: all 0.3s ease-in-out;
+}
+input:focus {
+    border-color: #00aaff !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+    transform: scale(1.05);
+}
+input::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Button with glowing effect */
+.btn-primary {
+    background: linear-gradient(90deg, #007bff, #00d4ff);
+    border: none;
+    transition: all 0.4s ease-in-out;
+    border-radius: 12px;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #0056b3, #0099ff);
+    transform: scale(1.07);
+    box-shadow: 0 0 15px rgba(0, 153, 255, 0.5);
+}
+
+/* Icon Animation */
+.bi-person-circle, .bi-person-plus {
+    animation: fadeIn 1s ease-in-out;
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+</style>
+
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="register-card text-center text-light">
+        <i class="bi bi-person-plus display-1 text-primary"></i>
+        <h3 class="mt-2">Create an Account</h3>
+        <p class="text-secondary">Join us today!</p>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" action="{% url 'register' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                {{ form.username }}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                {{ form.password1 }}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Confirm Password</label>
+                {{ form.password2 }}
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 fw-bold">Sign Up</button>
+        </form>
+
+        <div class="text-center mt-3">
+            <p>Already have an account? <a href="{% url 'login' %}" class="text-primary fw-bold">Login</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
